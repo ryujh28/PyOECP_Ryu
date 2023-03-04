@@ -290,11 +290,11 @@ class MCMC:
                 # determine if the acceptance rate is too low or high
                 # if so, change the rate
                 if self.AcceptanceCounter_tmp < 20:
-                    self.InitialRate[Name][ind] *= 2.0
+                    self.InitialRate[Name][ind] *= 1.1
 
                     self.AcceptanceCounter_tmp = 0
-                elif self.AcceptanceCounter_tmp > 80:
-                    self.InitialRate[Name][ind] *= 0.5
+                elif self.AcceptanceCounter_tmp > 40:
+                    self.InitialRate[Name][ind] *= 0.9
                     self.AcceptanceCounter_tmp = 0
 
             Name, ind = self.Select()
