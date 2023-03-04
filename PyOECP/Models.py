@@ -207,6 +207,7 @@ class MCMC:
                         self.InitialRate[Name][ele] = Rate
         
         self.AcceptanceCounter = 0
+        self.AcceptanceCounter_tmp = 0
                 
     def Select(self):
         '''         
@@ -282,17 +283,34 @@ class MCMC:
         ''' During the production run, parameters and chi2s are saved. '''
         chi2s = np.zeros((int(self.production),))
         parameters = []        
+        i = 0 
         for run in tqdm(range(self.production)):
+
+            if i%100 == 0:
+                # determine if the acceptance rate is too low or high
+                # if so, change the rate
+                if self.AcceptanceCounter_tmp < 20:
+                    self.InitialRate[Name][ind] *= 2.0
+
+                    self.AcceptanceCounter_tmp = 0
+                elif self.AcceptanceCounter_tmp > 80:
+                    self.InitialRate[Name][ind] *= 0.5
+                    self.AcceptanceCounter_tmp = 0
+
             Name, ind = self.Select()
             par1 = self.Change(Name,ind)
             data1 = Discrete(self.frequency,par1)
             chi2a = self.chi2(data1)
+
+
             if chi2b > chi2a:                
                 self.par = copy.deepcopy(par1)
                 chi2s[run] = chi2a
                 chi2b = chi2a
                 parameters.append(self.par)
                 self.AcceptanceCounter += 1
+                self.AcceptanceCounter_tmp += 1
+                i+=1
             else:
                 criterion = np.random.uniform()
                 ratio = np.exp(-(chi2a+chi2b)/4)
@@ -302,10 +320,16 @@ class MCMC:
                     chi2b = chi2a
                     parameters.append(self.par)
                     self.AcceptanceCounter += 1
+                    self.AcceptanceCounter_tmp += 1
+                    i+=1
                 else:
                     parameters.append(self.par)
-                    chi2s[run] = chi2b                    
+                    chi2s[run] = chi2b          
+                    i+=1          
                     continue         
+            
+
+
         print("\nAcceptance Rate: "+str(self.AcceptanceCounter/(self.production)))
         minID = np.argmin(chi2s)
         par2 = parameters[minID]
