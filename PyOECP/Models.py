@@ -17,17 +17,24 @@ import copy
 from tqdm import tqdm
 
 class Parameters:
-    
-    def __init__(self):                
+
+    def __init__(self):
         self.par = {}
-        self.par['ei'] = np.array([])
-        self.par['magnitudes'] = np.array([])
-        self.par['times'] = np.array([])
-        self.par['As'] = np.array([])
-        self.par['Bs'] = np.array([])
+        self.par['ei'] = np.array([]) # should be float
+        self.par['magnitudes'] = np.array([]) # should be a list
+        self.par['times'] = np.array([]) # should be a list
+        self.par['As'] = np.array([]) # should be a list
+        self.par['Bs'] = np.array([]) # should be a list
         self.par['CPEs'] = np.array([])
         self.par['conductance'] = np.array([])
-    
+
+        ### WARINING!!!
+        ### this part (NaturalFrequency part) is modified for JH RYU
+        ### this exist for damped harmonic oscillator part
+        ### I HOPE YOU KNOW WHAT YOU DO
+
+        self.par['NaturalFreq'] =  np.array([]) # should be a list
+
     def Set(self,name,val):
         ''' Set the parameter values. '''
         try:
@@ -35,23 +42,25 @@ class Parameters:
             return None
         except KeyError:
             print('The key variables are ei, magnitudes, times, As, Bs, CPEs, and conductance.')
-    
+
     def Parameters(self):
         ''' Check if "par" is correctly set, and return "par" '''
-        Names = ['As','Bs']
+        #Names = ['As','Bs']  # original one
+        Names = ['As','Bs', 'NaturalFreq'] #### WARNING!!!! revised!!!
         for Name in Names:
-            if len(self.par[Name]) < len(self.par['magnitudes']):                
+            if len(self.par[Name]) < len(self.par['magnitudes']):
                 for i in range(len(self.par['magnitudes'])-len(self.par[Name])):
-                    self.par[Name] = np.append(self.par[Name],None)       
-            
+                    self.par[Name] = np.append(self.par[Name],None)
+
         return self.par
+
         
 
 def Discrete(frequency, par):
-    ''' Multiple discrete relaxation model '''    
-    
+    ''' Multiple discrete relaxation model '''
+
     Omega = 2*np.pi*frequency
-    
+
     ei = par['ei']
     magnitudes = par['magnitudes']
     times = par['times']
@@ -59,42 +68,47 @@ def Discrete(frequency, par):
     Bs = par['Bs']
     CPEs = par['CPEs']
     conductance = par['conductance']
-    
+    NaturalFreq = par['NaturalFreq'] ### WARNING!!!! revised!!!!
+
     epsilon = ei*np.ones((len(frequency),),dtype=complex)
-    
+
     e0 = 8.8541878128e-12
-        
+
     for ele in range(len(magnitudes)):
         A = As[ele]
         B = Bs[ele]
         M = magnitudes[ele]
+        NF = NaturalFreq[ele]
         T = times[ele]
-        if A is not None and B is not None:
+        if NF is not None:  ## WARNING!!! REVISED!!!
+            epsilon += M/2*((1-1j*Omega*T)/(1-1j*T*(NF+Omega)) +  ((1+1j*Omega*T)/(1+1j*T*(NF-Omega))))
+        #if A is not None and B is not None: ## original
+        elif A is not None and B is not None:
             # Havriliak-Negami Model
             epsilon += M/((1+1j*T*Omega)**(1-A))**(1-B)
         elif A is None and B is not None:
             # Cole-Davidson Model
             epsilon += M/((1+1j*T*Omega))**(1-B)
-        elif A is not None and B is None: 
+        elif A is not None and B is None:
             # Cole-Cole Model
             epsilon += M/((1+1j*T*Omega)**(1-A))
         else:
             # Debye Model
             epsilon += M/((1+1j*T*Omega))
-    
+
     if len(conductance) != 0:
         epsilon = epsilon + conductance/(1j*Omega*e0)
-    
-    if len(CPEs) != 0:        
+
+    if len(CPEs) != 0:
         try:
             if len(CPEs) != 2:
                 sys.exit('Wrong parameter set for CPE representation. (2 Parameters Required.)')
-            else:                
+            else:
                 CPEs = CPEs[0]*(1j*Omega)**(1-CPEs[1])
                 epsilon = epsilon/(1+epsilon/CPEs)
         except TypeError:
             print('Wrong parameter set for CPE representation. (2 Parameters Required.)')
-    
+
     return epsilon
 
 def Continuous(frequency,epsilon,parameters,alpha = 0.05):    
