@@ -84,18 +84,21 @@ def Discrete(frequency, par):
             AF = 2*np.pi*NF  # Angular frequency
             epsilon += M/2*((1-1j*Omega*T)/(1-1j*T*(AF+Omega)) +  ((1+1j*Omega*T)/(1+1j*T*(AF-Omega))))
         #if A is not None and B is not None: ## original
+
+        ####### originally (1-1j*T*Omega) 
+        ####### this part is fixed to (1+1j*T*Omega)
         elif A is not None and B is not None:
             # Havriliak-Negami Model
-            epsilon += M/((1+1j*T*Omega)**(1-A))**(1-B)
+            epsilon += M/((1-1j*T*Omega)**(1-A))**(1-B)
         elif A is None and B is not None:
             # Cole-Davidson Model
-            epsilon += M/((1+1j*T*Omega))**(1-B)
+            epsilon += M/((1-1j*T*Omega))**(1-B)
         elif A is not None and B is None:
             # Cole-Cole Model
-            epsilon += M/((1+1j*T*Omega)**(1-A))
+            epsilon += M/((1-1j*T*Omega)**(1-A))
         else:
             # Debye Model
-            epsilon += M/((1+1j*T*Omega))
+            epsilon += M/((1-1j*T*Omega))
 
     if len(conductance) != 0:
         epsilon = epsilon + conductance/(1j*Omega*e0)
