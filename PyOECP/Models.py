@@ -81,7 +81,7 @@ def Discrete(frequency, par):
         NF = NaturalFreq[ele]
         T = times[ele]
         if NF is not None:  ## WARNING!!! REVISED!!!
-            AF = 2*np.pi*NF
+            AF = 2*np.pi*NF  # Angular frequency
             epsilon += M/2*((1-1j*Omega*T)/(1-1j*T*(AF+Omega)) +  ((1+1j*Omega*T)/(1+1j*T*(AF-Omega))))
         #if A is not None and B is not None: ## original
         elif A is not None and B is not None:
